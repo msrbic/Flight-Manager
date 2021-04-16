@@ -1,0 +1,8 @@
+*Debug*
+*obj*
+*bin*
+.idea
+node_modules
+out/
+.vscode
+.vs*

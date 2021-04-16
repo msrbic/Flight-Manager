@@ -1,0 +1,8 @@
+.idea
+node_modules
+out/
+.vscode
+.vs/flights-frontend/config/applicationhost.config
+.vs/flights-frontend/config/applicationhost.config
+.vs/flights-frontend/v16/.suo
+.vs/slnx.sqlite

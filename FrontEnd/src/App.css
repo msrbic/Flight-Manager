@@ -1,0 +1,17 @@
+.scrolltable{
+    overflow: scroll;
+    max-height: 50vh;
+}
+
+.flex-column{
+    float: left;
+    /*background-color: #343A40;*/
+}
+
+.test{
+    flex:1;
+}
+
+.admin{
+    display: flex;
+}
