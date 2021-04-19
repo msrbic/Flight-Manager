@@ -2,9 +2,8 @@ import _ from 'lodash';
 import React from 'react'
 import {Button, Form, Table} from 'react-bootstrap';
 import {Redirect} from 'react-router';
-import {createAccount, deleteAccount, getAllAccounts} from '../../api/accounts-api';
-import {AccountRequest} from '../../api/request/account-request';
-import { CreateAccountRequest } from '../../api/request/create-account';
+import {createAccount, deleteAccount, getAllAccounts, updateAccount} from '../../api/accounts-api';
+import {CreateAccountRequest} from '../../api/request/create-account';
 import {Account} from '../../api/response/account';
 import "./user-management.css"
 
@@ -24,26 +23,38 @@ interface State {
     isVerified: boolean;
     password: string;
     confirmPassword: string;
+
+    showAddNewAccountForm: boolean;
+    showEditAccountForm: boolean;
 }
 
 export class UserManagement extends React.Component<Props, State> {
 
     constructor(props: Props) {
         super(props);
-        this.state = {
-            accounts: [],
+        this.state = this.getInitialState();
+    }
 
-            id: 0,
-            firstName: '',
-            lastName: '',
-            email: '',
-            role: 'User',
-            created: 0,
-            updated: 0,
-            isVerified: false,
-            password: '',
-            confirmPassword: ''
-        }
+    getInitialState = () => ({
+        accounts: [],
+
+        id: 0,
+        firstName: '',
+        lastName: '',
+        email: '',
+        role: 'User',
+        created: 0,
+        updated: 0,
+        isVerified: false,
+        password: '',
+        confirmPassword: '',
+
+        showAddNewAccountForm: false,
+        showEditAccountForm: false
+    })
+
+    resetState = () => {
+        this.setState(this.getInitialState());
     }
 
     componentDidMount() {
@@ -55,13 +66,17 @@ export class UserManagement extends React.Component<Props, State> {
             <div>
                 <h3 className="user-management-heading">Accounts</h3>
 
+                <Button onClick={() => this.setState({showAddNewAccountForm: true})}>Create new account</Button>
+                <br /><br />
                 <div className="scrolltable">
                     {this.renderAccounts()}
                 </div>
 
                 <br />
-                <h3>Add new account</h3>
-                {this.renderNewAccountForm()}
+                {this.state.showAddNewAccountForm && <h3>Add new account</h3>}
+                {this.state.showAddNewAccountForm && this.renderNewAccountForm()}
+                {this.state.showEditAccountForm && <h3>Edit account</h3>}
+                {this.state.showEditAccountForm && this.renderNewAccountForm()}
 
                 {
                     (!localStorage.getItem('jwt') || !(localStorage.getItem('role') === 'Admin')) && <Redirect to='/login' />
@@ -80,7 +95,7 @@ export class UserManagement extends React.Component<Props, State> {
                         <th>Last name</th>
                         <th>Role</th>
                         <th>Is Verified</th>
-                        <th>Actions</th>
+                        <th colSpan={2}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -99,6 +114,7 @@ export class UserManagement extends React.Component<Props, State> {
                 <td>{account.role}</td>
                 <td>{String(account.isVerified)}</td>
                 <td>{<Button onClick={() => this.deleteSingleAccount(account.id!)}>Delete</Button>}</td>
+                <td>{<Button onClick={() => this.editSingleAccount(account)}>Edit</Button>}</td>
             </tr>
         );
     }
@@ -135,8 +151,8 @@ export class UserManagement extends React.Component<Props, State> {
                     {/*    placeholder="Role"*/}
                     {/*    onChange={event => this.setState({role: event.target.value})}*/}
                     {/*/>*/}
-                    <Form.Control as="select" onChange={event => this.setState({role: event.target.value})}>
-                        <option selected={true}>User</option>
+                    <Form.Control as="select" defaultValue="User" onChange={event => this.setState({role: event.target.value})}>
+                        <option>User</option>
                         <option>Admin</option>
                     </Form.Control>
                     <Form.Label>Password</Form.Label>
@@ -155,7 +171,7 @@ export class UserManagement extends React.Component<Props, State> {
                     />
                 </Form.Group>
 
-                <Button variant="primary" onClick={this.createNewAccount}>
+                <Button variant="primary" onClick={this.createOrEditAccount}>
                     Submit
                 </Button>
                 <br />
@@ -165,6 +181,26 @@ export class UserManagement extends React.Component<Props, State> {
 
     private deleteSingleAccount = (id: number) => {
         deleteAccount(id).then(this.loadAccounts);
+    }
+
+    private createOrEditAccount = () => {
+        if (this.state.showAddNewAccountForm) {
+            this.createNewAccount();
+        }
+        if (this.state.showEditAccountForm) {
+            this.editAccount();
+        }
+    }
+
+    private editSingleAccount = (account: Account) => {
+        this.setState({
+            showEditAccountForm: true,
+            showAddNewAccountForm: false,
+            id: account.id,
+            firstName: account.firstName,
+            lastName: account.lastName,
+            email: account.email,
+            role: account.role});
     }
 
     private loadAccounts = () => {
@@ -183,6 +219,24 @@ export class UserManagement extends React.Component<Props, State> {
             role: this.state.role
         } as CreateAccountRequest;
 
+        this.resetState();
+
         createAccount(request).then(this.loadAccounts);
+    }
+
+    private editAccount = () => {
+        const request = {
+            id: this.state.id,
+            firstName: this.state.firstName,
+            lastName: this.state.lastName,
+            email: this.state.email,
+            password: this.state.password,
+            confirmPassword: this.state.confirmPassword,
+            role: this.state.role
+        } as unknown as Account;
+
+        this.resetState();
+
+        updateAccount(request).then(this.loadAccounts);
     }
 }
