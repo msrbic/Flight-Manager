@@ -3,9 +3,11 @@ import React from 'react'
 import {Button, Form, Table} from 'react-bootstrap';
 import {Redirect} from 'react-router';
 import {createAirport, deleteAirport, getAllAirports, updateAirport} from '../../api/airports-api';
-import {getCity} from '../../api/cities-api';
+import {getAllCities, getCity} from '../../api/cities-api';
 import {Airport} from '../../api/response/airport';
-import "./airports.css"
+import {City} from '../../api/response/city';
+import "./airports.css";
+import Select from "react-select";
 
 interface Props {
 }
@@ -21,6 +23,10 @@ interface State {
 
     showAddNewAirportForm: boolean;
     showEditAirportForm: boolean;
+
+    cityNames: Map<number, string>;
+
+    cities: City[];
 }
 
 export class Airports extends React.Component<Props, State> {
@@ -37,7 +43,10 @@ export class Airports extends React.Component<Props, State> {
             cityId: 0,
 
             showAddNewAirportForm: false,
-            showEditAirportForm: false
+            showEditAirportForm: false,
+
+            cityNames: new Map(),
+            cities: []
         }
     }
 
@@ -47,6 +56,7 @@ export class Airports extends React.Component<Props, State> {
 
     componentDidMount() {
         this.loadAirports();
+        this.getCities();
     }
 
     render() {
@@ -74,6 +84,17 @@ export class Airports extends React.Component<Props, State> {
         );
     }
 
+    private getCities = () => {
+        getAllCities()
+            .then(cities => {this.setState({cities: cities, cityNames: this.mapCityNames(cities)} as State)});
+    }
+
+    private mapCityNames = (cities: City[]) => {
+        var map = new Map();
+        cities.forEach(city => map.set(city.id, city.name));
+        return map;
+    }
+
     private renderAirports = () => {
         return (
             <Table striped bordered hover>
@@ -82,7 +103,7 @@ export class Airports extends React.Component<Props, State> {
                         <th>Name</th>
                         <th>Detailed name</th>
                         <th>Iata code</th>
-                        <th>City id</th>
+                        <th>City</th>
                         <th colSpan={2}>Actions</th>
                     </tr>
                 </thead>
@@ -99,7 +120,7 @@ export class Airports extends React.Component<Props, State> {
                 <td>{airport.name}</td>
                 <td>{airport.detailedName}</td>
                 <td>{airport.iataCode}</td>
-                <td>{airport.cityId}</td>
+                <td>{this.state.cityNames.get(airport.cityId)}</td>
                 <td>{<Button onClick={() => this.deleteSingleAirport(airport.id!)}>Delete</Button>}</td>
                 <td>{<Button onClick={() => this.editSingleAirport(airport)}>Edit</Button>}</td>
             </tr>
@@ -131,12 +152,13 @@ export class Airports extends React.Component<Props, State> {
                         placeholder="Iata code"
                         onChange={event => this.setState({iataCode: event.target.value})}
                     />
-                    <Form.Label>City id</Form.Label>
-                    <Form.Control
-                        type="number"
-                        value={this.state.cityId ?? ''}
-                        placeholder="City id"
-                        onChange={event => this.setState({cityId: Number(event.target.value)})}
+                    <Form.Label>City</Form.Label>
+                    <Select
+                        placeholder="City"
+                        options={this.mapCitiesToValues(this.state.cities)}
+                        onChange={(item: any) => this.setState({cityId: item.value})}
+                        onMenuOpen={_.noop}
+                        value={this.mapCitiesToValues(this.state.cities).find(o => o.value == this.state.cityId)}
                     />
                 </Form.Group>
 
@@ -147,6 +169,13 @@ export class Airports extends React.Component<Props, State> {
             </Form>
         )
     }
+
+    private mapCitiesToValues = (options: City[]) => {
+        return options.map(option => ({
+            value: option.id,
+            label: option.name
+        }));
+    };
 
     private deleteSingleAirport = (id: number) => {
         deleteAirport(id).then(this.loadAirports);

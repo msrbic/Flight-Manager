@@ -3,8 +3,12 @@ import React from 'react'
 import {Button, Form, Table} from 'react-bootstrap';
 import {Redirect} from 'react-router';
 import {createCity, deleteCity, getAllCities, updateCity} from '../../api/cities-api';
+import {getAllCountries} from '../../api/countries-api';
 import {City} from '../../api/response/city';
-import "./cities.css"
+import {Country} from '../../api/response/country';
+import "./cities.css";
+import Select from "react-select";
+
 
 interface Props {
 }
@@ -20,6 +24,9 @@ interface State {
 
     showAddNewCityForm: boolean;
     showEditCityForm: boolean;
+
+    countries: Country[];
+    countryNames: Map<number, string>;
 }
 
 export class Cities extends React.Component<Props, State> {
@@ -36,7 +43,10 @@ export class Cities extends React.Component<Props, State> {
             countryId: 0,
 
             showAddNewCityForm: false,
-            showEditCityForm: false
+            showEditCityForm: false,
+
+            countries: [],
+            countryNames: new Map()
         }
     }
 
@@ -46,6 +56,7 @@ export class Cities extends React.Component<Props, State> {
 
     componentDidMount() {
         this.loadCities();
+        this.getCountries();
     }
 
     render() {
@@ -82,7 +93,7 @@ export class Cities extends React.Component<Props, State> {
                         <th>Name</th>
                         <th>Detailed name</th>
                         <th>Iata code</th>
-                        <th>Country id</th>
+                        <th>Country</th>
                         <th colSpan={2}>Actions</th>
                     </tr>
                 </thead>
@@ -99,7 +110,7 @@ export class Cities extends React.Component<Props, State> {
                 <td>{city.name}</td>
                 <td>{city.detailedName}</td>
                 <td>{city.iataCode}</td>
-                <td>{String(city.countryId)}</td>
+                <td>{this.state.countryNames.get(city.countryId)}</td>
                 <td>{<Button onClick={() => this.deleteSingleCity(city.id!)}>Delete</Button>}</td>
                 <td>{<Button onClick={() => this.editSingleCity(city)}>Edit</Button>}</td>
             </tr>
@@ -131,12 +142,13 @@ export class Cities extends React.Component<Props, State> {
                         placeholder="Iata code"
                         onChange={event => this.setState({iataCode: event.target.value})}
                     />
-                    <Form.Label>Country id</Form.Label>
-                    <Form.Control
-                        type="number"
-                        value={this.state.countryId ?? ''}
-                        placeholder="Country id"
-                        onChange={event => this.setState({countryId: Number(event.target.value)})}
+                    <Form.Label>Country</Form.Label>
+                    <Select
+                        placeholder="Country"
+                        options={this.mapCountriesToValues(this.state.countries)}
+                        onChange={(item: any) => this.setState({countryId: item.value})}
+                        onMenuOpen={_.noop}
+                        value={this.mapCountriesToValues(this.state.countries).find(o => o.value == this.state.countryId)}
                     />
                 </Form.Group>
 
@@ -146,6 +158,24 @@ export class Cities extends React.Component<Props, State> {
                 <br />
             </Form>
         )
+    }
+
+    private mapCountriesToValues = (options: Country[]) => {
+        return options.map(option => ({
+            value: option.id,
+            label: option.name
+        }));
+    };
+
+    private getCountries = () => {
+        getAllCountries()
+            .then(countries => {this.setState({countries: countries, countryNames: this.mapCountryNames(countries)} as State)});
+    }
+
+    private mapCountryNames = (countries: Country[]) => {
+        var map = new Map();
+        countries.forEach(country => map.set(country.id, country.name));
+        return map;
     }
 
     private deleteSingleCity = (id: number) => {

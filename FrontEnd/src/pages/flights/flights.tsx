@@ -46,7 +46,7 @@ interface State {
     carriers: Carrier[];
     aircrafts: Aircraft[];
 
-    airportNames: Map<number, Airport>;
+    airportNames: Map<number, string>;
 }
 
 const TRAVELCLASS: Record<string, number> = {
