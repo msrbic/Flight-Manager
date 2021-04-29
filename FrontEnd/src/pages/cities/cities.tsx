@@ -2,7 +2,7 @@ import _ from 'lodash';
 import React from 'react'
 import {Button, Form, Table} from 'react-bootstrap';
 import {Redirect} from 'react-router';
-import {createCity, deleteCity, getAllCities} from '../../api/cities-api';
+import {createCity, deleteCity, getAllCities, updateCity} from '../../api/cities-api';
 import {City} from '../../api/response/city';
 import "./cities.css"
 
@@ -12,10 +12,14 @@ interface Props {
 interface State {
     cities: City[];
 
+    id: number;
     name: string;
     detailedName: string;
     iataCode: string;
     countryId: number;
+
+    showAddNewCityForm: boolean;
+    showEditCityForm: boolean;
 }
 
 export class Cities extends React.Component<Props, State> {
@@ -25,11 +29,19 @@ export class Cities extends React.Component<Props, State> {
         this.state = {
             cities: [],
 
+            id: 0,
             name: '',
             detailedName: '',
             iataCode: '',
-            countryId: 0
+            countryId: 0,
+
+            showAddNewCityForm: false,
+            showEditCityForm: false
         }
+    }
+
+    resetState = () => {
+        this.setState({id: 0, name: '', detailedName: '', iataCode: '', countryId: 0, showAddNewCityForm: false, showEditCityForm: false});
     }
 
     componentDidMount() {
@@ -40,14 +52,20 @@ export class Cities extends React.Component<Props, State> {
         return (
             <div>
                 <h3 className="cities-heading">Cities</h3>
+                <Button onClick={this.addCity}>Add new city</Button>
+                <br />
+                <br />
 
                 <div className="scrolltable">
                     {this.renderCities()}
                 </div>
 
                 <br />
-                <h3>Add new city</h3>
-                {this.renderNewCityForm()}
+                {this.state.showAddNewCityForm && <h3>Add new city</h3>}
+                {this.state.showAddNewCityForm && this.renderNewCityForm()}
+                {this.state.showEditCityForm && <h3>Edit city</h3>}
+                {this.state.showEditCityForm && this.renderNewCityForm()}
+
 
                 {
                     (!localStorage.getItem('jwt') || !(localStorage.getItem('role') === 'Admin')) && <Redirect to='/login' />
@@ -65,7 +83,7 @@ export class Cities extends React.Component<Props, State> {
                         <th>Detailed name</th>
                         <th>Iata code</th>
                         <th>Country id</th>
-                        <th>Actions</th>
+                        <th colSpan={2}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -83,6 +101,7 @@ export class Cities extends React.Component<Props, State> {
                 <td>{city.iataCode}</td>
                 <td>{String(city.countryId)}</td>
                 <td>{<Button onClick={() => this.deleteSingleCity(city.id!)}>Delete</Button>}</td>
+                <td>{<Button onClick={() => this.editSingleCity(city)}>Edit</Button>}</td>
             </tr>
         );
     }
@@ -112,7 +131,7 @@ export class Cities extends React.Component<Props, State> {
                         placeholder="Iata code"
                         onChange={event => this.setState({iataCode: event.target.value})}
                     />
-                    <Form.Label>City id</Form.Label>
+                    <Form.Label>Country id</Form.Label>
                     <Form.Control
                         type="number"
                         value={this.state.countryId ?? ''}
@@ -121,7 +140,7 @@ export class Cities extends React.Component<Props, State> {
                     />
                 </Form.Group>
 
-                <Button variant="primary" onClick={this.createNewCity}>
+                <Button variant="primary" onClick={this.addOrEditCity}>
                     Submit
                 </Button>
                 <br />
@@ -147,6 +166,41 @@ export class Cities extends React.Component<Props, State> {
             countryId: this.state.countryId,
         } as City;
 
+        this.resetState();
+
         createCity(request).then(this.loadCities);
+    }
+
+    private editCity = () => {
+        const request = {
+            name: this.state.name,
+            detailedName: this.state.detailedName,
+            iataCode: this.state.iataCode,
+            countryId: this.state.countryId,
+            id: this.state.id
+        } as City;
+
+        this.resetState()
+
+        updateCity(request).then(this.loadCities);
+    }
+
+    private addCity = () => {
+        this.resetState();
+        this.setState({showAddNewCityForm: true});
+    }
+
+    private editSingleCity = (city: City) => {
+        this.resetState();
+        this.setState({id: city.id ?? 0, name: city.name, detailedName: city.detailedName, iataCode: city.iataCode, countryId: city.countryId, showEditCityForm: true});
+    }
+
+    private addOrEditCity = () => {
+        if (this.state.showAddNewCityForm) {
+            this.createNewCity();
+        }
+        if (this.state.showEditCityForm) {
+            this.editCity();
+        }
     }
 }

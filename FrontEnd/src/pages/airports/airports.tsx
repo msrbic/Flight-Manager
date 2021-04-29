@@ -2,7 +2,7 @@ import _ from 'lodash';
 import React from 'react'
 import {Button, Form, Table} from 'react-bootstrap';
 import {Redirect} from 'react-router';
-import {createAirport, deleteAirport, getAllAirports} from '../../api/airports-api';
+import {createAirport, deleteAirport, getAllAirports, updateAirport} from '../../api/airports-api';
 import {getCity} from '../../api/cities-api';
 import {Airport} from '../../api/response/airport';
 import "./airports.css"
@@ -13,10 +13,14 @@ interface Props {
 interface State {
     airports: Airport[];
 
+    id: number;
     name: string;
     detailedName: string;
     iataCode: string;
     cityId: number;
+
+    showAddNewAirportForm: boolean;
+    showEditAirportForm: boolean;
 }
 
 export class Airports extends React.Component<Props, State> {
@@ -26,11 +30,19 @@ export class Airports extends React.Component<Props, State> {
         this.state = {
             airports: [],
 
+            id: 0,
             name: '',
             detailedName: '',
             iataCode: '',
-            cityId: 0
+            cityId: 0,
+
+            showAddNewAirportForm: false,
+            showEditAirportForm: false
         }
+    }
+
+    resetState = () => {
+        this.setState({id: 0, name: '', detailedName: '', iataCode: '', cityId: 0, showAddNewAirportForm: false, showEditAirportForm: false});
     }
 
     componentDidMount() {
@@ -41,14 +53,19 @@ export class Airports extends React.Component<Props, State> {
         return (
             <div>
                 <h3 className="airports-heading">Airports</h3>
+                <Button onClick={this.addAirport}>Add new airport</Button>
+                <br />
+                <br />
 
                 <div className="scrolltable">
                     {this.renderAirports()}
                 </div>
 
                 <br />
-                <h3>Add new airport</h3>
-                {this.renderNewAirportForm()}
+                {this.state.showAddNewAirportForm && <h3>Add new airport</h3>}
+                {this.state.showAddNewAirportForm && this.renderNewAirportForm()}
+                {this.state.showEditAirportForm && <h3>Edit airport</h3>}
+                {this.state.showEditAirportForm && this.renderNewAirportForm()}
 
                 {
                     (!localStorage.getItem('jwt') || !(localStorage.getItem('role') === 'Admin')) && <Redirect to='/login' />
@@ -66,7 +83,7 @@ export class Airports extends React.Component<Props, State> {
                         <th>Detailed name</th>
                         <th>Iata code</th>
                         <th>City id</th>
-                        <th>Actions</th>
+                        <th colSpan={2}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -84,6 +101,7 @@ export class Airports extends React.Component<Props, State> {
                 <td>{airport.iataCode}</td>
                 <td>{airport.cityId}</td>
                 <td>{<Button onClick={() => this.deleteSingleAirport(airport.id!)}>Delete</Button>}</td>
+                <td>{<Button onClick={() => this.editSingleAirport(airport)}>Edit</Button>}</td>
             </tr>
         );
     }
@@ -122,7 +140,7 @@ export class Airports extends React.Component<Props, State> {
                     />
                 </Form.Group>
 
-                <Button variant="primary" onClick={this.createNewAirport}>
+                <Button variant="primary" onClick={this.addOrEditAirport}>
                     Submit
                 </Button>
                 <br />
@@ -148,6 +166,48 @@ export class Airports extends React.Component<Props, State> {
             cityId: this.state.cityId,
         } as Airport;
 
+        this.resetState();
+
         createAirport(request).then(this.loadAirports);
+    }
+
+    private editAirport = () => {
+        const request = {
+            name: this.state.name,
+            detailedName: this.state.detailedName,
+            iataCode: this.state.iataCode,
+            cityId: this.state.cityId,
+            id: this.state.id
+        } as Airport;
+
+        this.resetState()
+
+        updateAirport(request).then(this.loadAirports);
+    }
+
+    private addAirport = () => {
+        this.resetState();
+        this.setState({showAddNewAirportForm: true});
+    }
+
+    private editSingleAirport = (airport: Airport) => {
+        this.resetState();
+        this.setState({
+            id: airport.id ?? 0,
+            name: airport.name,
+            detailedName: airport.detailedName,
+            iataCode: airport.iataCode,
+            cityId: airport.cityId,
+            showEditAirportForm: true
+        })
+    }
+
+    private addOrEditAirport = () => {
+        if (this.state.showAddNewAirportForm) {
+            this.createNewAirport();
+        }
+        if (this.state.showEditAirportForm) {
+            this.editAirport();
+        }
     }
 }

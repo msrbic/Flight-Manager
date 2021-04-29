@@ -2,7 +2,7 @@ import _ from 'lodash';
 import React from 'react'
 import {Button, Form, Table} from 'react-bootstrap';
 import {Redirect} from 'react-router';
-import {createCurrency, deleteCurrency, getAllCurrencies} from '../../api/currencies-api';
+import {createCurrency, deleteCurrency, getAllCurrencies, updateCurrency} from '../../api/currencies-api';
 import {Currency} from '../../api/response/currency';
 import "./currencies.css"
 
@@ -12,9 +12,13 @@ interface Props {
 interface State {
     currencies: Currency[];
 
+    id: number;
     isoCode: string;
     name: string;
     exchangeRate: number;
+
+    showAddNewCurrencyForm: boolean;
+    showEditCurrencyForm: boolean;
 }
 
 export class Currencies extends React.Component<Props, State> {
@@ -24,10 +28,18 @@ export class Currencies extends React.Component<Props, State> {
         this.state = {
             currencies: [],
 
+            id: 0,
             isoCode: '',
             name: '',
-            exchangeRate: 1.0
+            exchangeRate: 1.0,
+
+            showAddNewCurrencyForm: false,
+            showEditCurrencyForm: false
         }
+    }
+
+    resetState = () => {
+        this.setState({id: 0, isoCode: '', name: '', exchangeRate: 1.0, showEditCurrencyForm: false, showAddNewCurrencyForm: false});
     }
 
     componentDidMount() {
@@ -38,14 +50,20 @@ export class Currencies extends React.Component<Props, State> {
         return (
             <div>
                 <h3 className="currencies-heading">Currencies</h3>
+                <Button onClick={this.addCurrency}>Add new currency</Button>
+                <br />
+                <br />
 
                 <div className="scrolltable">
                     {this.renderCurrencies()}
                 </div>
 
                 <br />
-                <h3>Add new currency</h3>
-                {this.renderNewCurrencyForm()}
+                {this.state.showAddNewCurrencyForm && <h3>Add new currency</h3>}
+                {this.state.showAddNewCurrencyForm && this.renderNewCurrencyForm()}
+                {this.state.showEditCurrencyForm && <h3>Edit currency</h3>}
+                {this.state.showEditCurrencyForm && this.renderNewCurrencyForm()}
+
 
                 {
                     (!localStorage.getItem('jwt') || !(localStorage.getItem('role') === 'Admin')) && <Redirect to='/login' />
@@ -63,7 +81,7 @@ export class Currencies extends React.Component<Props, State> {
                         <th>Name</th>
                         <th>Exchange Rate</th>
                         <th>Is Default</th>
-                        <th>Actions</th>
+                        <th colSpan={2}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -81,6 +99,7 @@ export class Currencies extends React.Component<Props, State> {
                 <td>{currency.exchangeRate}</td>
                 <td>{String(currency.isDefault)}</td>
                 <td>{<Button onClick={() => this.deleteSingleCurrency(currency.id!)}>Delete</Button>}</td>
+                <td>{<Button onClick={() => this.editSingleCurrency(currency)}>Edit</Button>}</td>
             </tr>
         );
     }
@@ -113,7 +132,7 @@ export class Currencies extends React.Component<Props, State> {
                     />
                 </Form.Group>
 
-                <Button variant="primary" onClick={this.createNewCurrency}>
+                <Button variant="primary" onClick={this.addOrEditCurrency}>
                     Submit
                 </Button>
                 <br />
@@ -139,6 +158,41 @@ export class Currencies extends React.Component<Props, State> {
             isDefault: false
         } as Currency;
 
+        this.resetState();
+
         createCurrency(request).then(this.loadCurrencies);
+    }
+
+    private editCurrency = () => {
+        const request = {
+            isoCode: this.state.isoCode,
+            name: this.state.name,
+            exchangeRate: String(this.state.exchangeRate),
+            isDefault: false,
+            id: this.state.id
+        } as Currency;
+
+        this.resetState()
+
+        updateCurrency(request).then(this.loadCurrencies);
+    }
+
+    private addCurrency = () => {
+        this.resetState();
+        this.setState({showAddNewCurrencyForm: true});
+    }
+
+    private editSingleCurrency = (currency: Currency) => {
+        this.resetState();
+        this.setState({id: currency.id ?? 0, isoCode: currency.isoCode, name: currency.name, exchangeRate: Number(currency.exchangeRate), showEditCurrencyForm: true})
+    }
+
+    private addOrEditCurrency = () => {
+        if (this.state.showAddNewCurrencyForm) {
+            this.createNewCurrency();
+        }
+        if (this.state.showEditCurrencyForm) {
+            this.editCurrency();
+        }
     }
 }

@@ -2,7 +2,7 @@ import _ from 'lodash';
 import React from 'react'
 import {Button, Form, Table} from 'react-bootstrap';
 import {Redirect} from 'react-router';
-import {createCountry, deleteCountry, getAllCountries} from '../../api/countries-api';
+import {createCountry, deleteCountry, getAllCountries, updateCountry} from '../../api/countries-api';
 import {Country} from '../../api/response/country';
 import "./countries.css"
 
@@ -12,7 +12,11 @@ interface Props {
 interface State {
     countries: Country[];
 
+    id: number;
     name: string;
+
+    showAddNewCountryForm: boolean;
+    showEditCountryForm: boolean;
 }
 
 export class Countries extends React.Component<Props, State> {
@@ -22,8 +26,16 @@ export class Countries extends React.Component<Props, State> {
         this.state = {
             countries: [],
 
-            name: ''
+            id: 0,
+            name: '',
+
+            showAddNewCountryForm: false,
+            showEditCountryForm: false
         }
+    }
+
+    resetState = () => {
+        this.setState({id: 0, name: '', showAddNewCountryForm: false, showEditCountryForm: false});
     }
 
     componentDidMount() {
@@ -34,14 +46,19 @@ export class Countries extends React.Component<Props, State> {
         return (
             <div>
                 <h3 className="countries-heading">Countries</h3>
+                <Button onClick={this.addCountry}>Add new country</Button>
+                <br />
+                <br />
 
                 <div className="scrolltable">
                     {this.renderCountries()}
                 </div>
 
                 <br />
-                <h3>Add new country</h3>
-                {this.renderNewCountryForm()}
+                {this.state.showAddNewCountryForm && <h3>Add new country</h3>}
+                {this.state.showAddNewCountryForm && this.renderNewCountryForm()}
+                {this.state.showEditCountryForm && <h3>Edit country</h3>}
+                {this.state.showEditCountryForm && this.renderNewCountryForm()}
 
                 {
                     (!localStorage.getItem('jwt') || !(localStorage.getItem('role') === 'Admin')) && <Redirect to='/login' />
@@ -56,7 +73,7 @@ export class Countries extends React.Component<Props, State> {
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Actions</th>
+                        <th colSpan={2}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -71,6 +88,7 @@ export class Countries extends React.Component<Props, State> {
             <tr>
                 <td>{country.name}</td>
                 <td>{<Button onClick={() => this.deleteSingleCountry(country.id!)}>Delete</Button>}</td>
+                <td>{<Button onClick={() => this.editSingleCountry(country)}>Edit</Button>}</td>
             </tr>
         );
     }
@@ -88,7 +106,7 @@ export class Countries extends React.Component<Props, State> {
                     />
                 </Form.Group>
 
-                <Button variant="primary" onClick={this.createNewCountry}>
+                <Button variant="primary" onClick={this.addOrEditCountry}>
                     Submit
                 </Button>
                 <br />
@@ -111,6 +129,38 @@ export class Countries extends React.Component<Props, State> {
             name: this.state.name
         } as Country;
 
+        this.resetState();
+
         createCountry(request).then(this.loadCountries);
+    }
+
+    private editCountry = () => {
+        const request = {
+            name: this.state.name,
+            id: this.state.id
+        } as Country;
+
+        this.resetState()
+
+        updateCountry(request).then(this.loadCountries);
+    }
+
+    private addCountry = () => {
+        this.resetState();
+        this.setState({showAddNewCountryForm: true});
+    }
+
+    private editSingleCountry = (country: Country) => {
+        this.resetState();
+        this.setState({id: country.id ?? 0, name: country.name, showEditCountryForm: true})
+    }
+
+    private addOrEditCountry = () => {
+        if (this.state.showAddNewCountryForm) {
+            this.createNewCountry();
+        }
+        if (this.state.showEditCountryForm) {
+            this.editCountry();
+        }
     }
 }
