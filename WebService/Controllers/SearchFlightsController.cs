@@ -41,16 +41,22 @@ namespace WebService.Controllers
         // GET: api/GetIataCode
         [Route("api/[controller]/GetIataCodes")]
         [HttpGet]
-        public async Task<ActionResult<LocationDTO>> GetIataCodes(string keyword)
+        public async Task<ActionResult<LocationDTO>> GetIataCodes(string keyword, bool includeOnlyLocal = false)
         {
             var result = await flightManagerService.GetIataCodes(keyword);
-            try
-            {
-                result.AddRange(await amadeusService.GetIataCodes(keyword));
-            }
-            catch (Exception)
-            {
 
+            if (!includeOnlyLocal)
+            {
+                result.ForEach(l => l.Id = null);
+
+                try
+                {
+                    result.AddRange(await amadeusService.GetIataCodes(keyword));
+                }
+                catch (Exception)
+                {
+
+                }
             }
 
             var distinct = result.Distinct().ToList();

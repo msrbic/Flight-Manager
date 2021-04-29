@@ -17,7 +17,7 @@ namespace WebService.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<AdministratorFlightDTO>>> GetFlights(int currencyId)
         {
-            var exchangeRate = context.Currencies.Find(currencyId).ExchangeRate;
+            var exchangeRate = context.Currencies.Find(currencyId)?.ExchangeRate ?? 1;
             return await context.Flights
                 .Include(f => f.Prices)
                 .Select(f => new AdministratorFlightDTO(f, currencyId, exchangeRate))

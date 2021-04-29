@@ -7,9 +7,10 @@ import {Currencies} from "../currencies/currencies";
 import {Airports} from "../airports/airports";
 import {Login} from "../login/login";
 import {createBrowserHistory} from "history";
-import { Cities } from "../cities/cities";
-import { Carriers } from "../carriers/carriers";
-import { Countries } from "../countries/countries";
+import {Cities} from "../cities/cities";
+import {Carriers} from "../carriers/carriers";
+import {Countries} from "../countries/countries";
+import {Flights} from "../flights/flights";
 
 interface Props {
 }
@@ -26,14 +27,17 @@ export class FlightsManagement extends Component<Props, {}> {
                         <SideNavigation />
                         <Container className="test">
                             <Switch>
+                                <Route exact path="/flights">
+                                    <Flights />
+                                </Route>
                                 <Route exact path="/currencies">
-                                    <Currencies/>
+                                    <Currencies />
                                 </Route>
                                 <Route exact path="/aircrafts">
-                                    <Aircrafts/>
+                                    <Aircrafts />
                                 </Route>
                                 <Route exact path="/airports">
-                                    <Airports/>
+                                    <Airports />
                                 </Route>
                                 <Route exact path="/cities">
                                     <Cities />

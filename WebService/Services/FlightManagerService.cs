@@ -174,14 +174,16 @@ namespace WebService.Services
         public async Task<List<LocationDTO>> GetIataCodes(string keyword)
         {
             var airports = context.Airports
-                .Where(a => a.Name.Contains(keyword) || a.IataCode.Contains(keyword))
+                .Where(a => a.Name.Contains(keyword) || a.IataCode.Contains(keyword)
+                    || a.DetailedName.Contains(keyword))
                 .Include(a => a.City)
                 .ThenInclude(c => c.Country)
                 .Select(a => new LocationDTO(a))
                 .ToList();
 
             //var cities = context.Cities
-            //    .Where(c => c.Name.Contains(keyword) || c.IataCode.Contains(keyword))
+            //    .Where(c => c.Name.Contains(keyword) || c.IataCode.Contains(keyword)
+            //        || c.DetailedName.Contains(keyword))
             //    .Include(c => c.Country)
             //    .Select(c => new LocationDTO(c))
             //    .ToList();

@@ -9,6 +9,7 @@ namespace DataAccess.Database
         public FlightsManagerDb(DbContextOptions<FlightsManagerDb> options)
             : base(options)
         {
+            this.Database.SetCommandTimeout(60);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

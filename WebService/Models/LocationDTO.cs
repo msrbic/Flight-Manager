@@ -6,6 +6,7 @@ namespace WebService.Models
 {
     public class LocationDTO
     {
+        public int? Id { get; set; }
         public string IataCode { get; set; }
         public LocationType Type { get; set; }
         public string Name { get; set; }
@@ -23,7 +24,7 @@ namespace WebService.Models
 
             return compare.IataCode == IataCode && compare.Type == Type && compare.Name == Name
                 && compare.DetailedName == DetailedName && compare.CityName == CityName
-                && compare.CountryName == CountryName;
+                && compare.CountryName == CountryName && compare.Id == Id;
         }
 
         public override int GetHashCode()
@@ -33,11 +34,13 @@ namespace WebService.Models
                 ^ Name.GetHashCode()
                 ^ DetailedName.GetHashCode()
                 ^ CityName.GetHashCode()
-                ^ CountryName.GetHashCode();
+                ^ CountryName.GetHashCode()
+                ^ Id?.GetHashCode() ?? 0;
         }
 
         public LocationDTO(Airport airport)
         {
+            Id = airport.Id;
             IataCode = airport.IataCode;
             Type = LocationType.Airport;
             Name = airport.Name;
